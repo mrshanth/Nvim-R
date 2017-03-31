@@ -941,6 +941,9 @@ function GetNvimcomInfo()
         let s:R_pid = vr[3]
         let $RCONSOLE = vr[4]
         let search_list = vr[5]
+        if len(vr) == 7
+            let $R_IP_ADDRESS = vr[6]
+        endif
         call delete(g:rplugin_tmpdir . "/nvimcom_running_" . $NVIMR_ID)
         if s:nvimcom_version != s:required_nvimcom_dot
             call RWarningMsg('This version of Nvim-R requires nvimcom ' .
