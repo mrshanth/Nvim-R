@@ -706,7 +706,7 @@ function CheckNvimcomVersion()
                     \ '    unlist(strsplit(Sys.getenv("R_LIBS_USER"), .Platform$path.sep))[1L],',
                     \ '    sep = "\n")',
                     \ 'sink()']
-        let slog = system('R --no-save', rcode)
+        let slog = system(g:R_app . ' --no-save', rcode)
         if v:shell_error
             call RWarningMsg(slog)
             return 0
