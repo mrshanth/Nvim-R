@@ -701,7 +701,12 @@ function CheckNvimcomVersion()
         endif
 
         " The user libs directory may not exist yet if R was just upgraded
-        let rcode = [ 'sink("' . g:rplugin_tmpdir . '/libpaths")',
+        if exists("g:R_remote_tmpdir")
+            let tmpdir = g:R_remote_tmpdir
+        else
+            let tmpdir = g:rplugin_tmpdir
+        endif
+        let rcode = [ 'sink("' . tmpdir . '/libpaths")',
                     \ 'cat(.libPaths()[1L],',
                     \ '    unlist(strsplit(Sys.getenv("R_LIBS_USER"), .Platform$path.sep))[1L],',
                     \ '    sep = "\n")',
@@ -712,7 +717,7 @@ function CheckNvimcomVersion()
             return 0
         endif
         let libpaths = readfile(g:rplugin_tmpdir . "/libpaths")
-        if !(isdirectory(expand(libpaths[0])) && filewritable(expand(libpaths[0])) == 2)
+        if !(isdirectory(expand(libpaths[0])) && filewritable(expand(libpaths[0])) == 2) && !exists("g:R_remote_tmpdir")
             if !isdirectory(expand(libpaths[1]))
                 let resp = input('"' . libpaths[0] . '" is not writable. Should "' . libpaths[1] . '" be created now? [y/n] ')
                 if resp[0] == "y" || resp[0] == "Y"
@@ -724,7 +729,13 @@ function CheckNvimcomVersion()
         call delete(g:rplugin_tmpdir . "/libpaths")
 
         echo "Updating nvimcom... "
-        let slog = system(g:rplugin_Rcmd . ' CMD build "' . g:rplugin_home . '/R/nvimcom"')
+        if !exists("g:R_remote_tmpdir")
+            let slog = system(g:rplugin_Rcmd . ' CMD build "' . g:rplugin_home . '/R/nvimcom"')
+        else
+            call system('cp -R "' . g:rplugin_home . '/R/nvimcom" .')
+            let slog = system(g:rplugin_Rcmd . ' CMD build "' . g:R_remote_tmpdir . '/nvimcom"')
+            call system('rm -rf "' . g:R_tmpdir . '/nvimcom"')
+        endif
         if v:shell_error
             call ShowRSysLog(slog, "Error_building_nvimcom", "Failed to build nvimcom")
             return 0
@@ -953,6 +964,10 @@ function GetNvimcomInfo()
 
         if search_list =~ "package:colorout" && !exists("g:R_hl_term")
             let g:R_hl_term = 0
+        endif
+
+        if exists("g:R_nvimcom_home")
+            let s:nvimcom_home = g:R_nvimcom_home
         endif
 
         if isdirectory(s:nvimcom_home . "/bin/x64")
@@ -3360,6 +3375,9 @@ if filereadable(g:rplugin_compldir . "/nvimcom_info")
         endif
     endif
     unlet s:filelines
+endif
+if exists("g:R_nvimcom_home")
+    let s:nvimcom_home = g:R_nvimcom_home
 endif
 
 if has("nvim")

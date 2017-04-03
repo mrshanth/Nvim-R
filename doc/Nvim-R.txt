@@ -2621,6 +2621,62 @@ run will:
 
 
 ------------------------------------------------------------------------------
+							       *Nvim-R-remote*
+9.21 Run remote R~
+
+The easiest way of running R in a remote machine is logging into the remote
+machine through ssh, starting Neovim and running R in a Neovim's terminal (the
+default). However, if you need to start either Neovim or Vim in the local
+machine and run R in the remote machine, then a lot of additional
+configuration is required. Below is an example of how to achieve this:
+
+   1. Setup the remote machine to accept ssh login without password (search
+      the web to discover how to it).
+
+   2. At the remote machine:
+
+      - Add this to your `~/.Rprofile` (replace wlan0 with whatever is your
+	network interface):
+>
+        myip <- system("ifconfig", intern = TRUE)
+	myip <- myip[grep("wlan0", myip) + 1]
+	myip <- sub(" *inet ", "", myip)
+        Sys.setenv("R_IP_ADDRESS" = sub(" .*", "", myip))
+        rm(myip)
+<
+      - Create the directories `~/R/libraries` and `~/R/NvimR_cache`.
+
+   3. At the local machine:
+
+      - Create the shell script `~/bin/sshR` with the following contents and
+	make it executable:
+>
+        #!/bin/sh
+        ssh -p 222 -t remotelogin@remotehost "PATH=/home/remotelogin/bin:\$PATH R_LIBS_USER=~/R/library NVIMR_TMPDIR=~/R/NvimR_tmp NVIMR_COMPLDIR=~/R/NvimR_cache NVIMR_ID=$NVIMR_ID NVIMR_SECRET=$NVIMR_SECRET R_DEFAULT_PACKAGES=$R_DEFAULT_PACKAGES NVIM_IP_ADDRESS=$NVIM_IP_ADDRESS R $*"
+<
+
+      - Add the following lines to your vimrc (replace wlp1s0 with whatever is
+	your local network interface):
+>
+        " Use remote R if the remote file system is mounted
+        if isdirectory("/home/locallogin/remoteR/library")
+            let $NVIM_IP_ADDRESS = split(system("ifconfig | grep -C 1 wlp1s0 | tail -n 1 | sed -e 's/^ *inet \\(.*\\) netmask.*/\\1/'"), "\n")[0]
+            let R_app = "/home/locallogin/bin/sshR"
+            let R_cmd = "/home/locallogin/bin/sshR"
+            let R_compldir = "/home/locallogin/remoteR/NvimR_cache"
+            let R_tmpdir = "/home/locallogin/remoteR/NvimR_tmp"
+            let R_remote_tmpdir = "/home/remotelogin/R/NvimR_tmp"
+            let R_nvimcom_home = "/home/locallogin/remoteR/library/nvimcom"
+        endif
+<
+      - Mount the remote directory with `sshfs`:
+>
+	sshfs remotelogin@remotehost:/home/remotelogin/R remoteR
+<
+      - Start Neovim (or Vim), and start R.
+
+
+------------------------------------------------------------------------------
 								 *Nvim-R-Tmux*
 9.21 Integration with Tmux~
 
