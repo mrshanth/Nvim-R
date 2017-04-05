@@ -2635,36 +2635,52 @@ configuration is required. Below is an example of how to achieve this:
 
    2. At the remote machine:
 
-      - Add this to your `~/.Rprofile` (replace wlan0 with whatever is your
-	network interface):
+      - You have to edit your `~/.Rprofile` to create the environment variable
+	`R_IP_ADDRESS`. R will save this value in a file that Vim has to read
+	to be able to send messages to R. On Linux, the following code might
+	work:
 >
-        myip <- system("ifconfig", intern = TRUE)
-	myip <- myip[grep("wlan0", myip) + 1]
-	myip <- sub(" *inet ", "", myip)
-        Sys.setenv("R_IP_ADDRESS" = sub(" .*", "", myip))
-        rm(myip)
+        if(interactive() && Sys.getenv("NVIM_IP_ADDRESS") != ""){
+            local({
+                myip <- system("hostname -I", intern = TRUE)
+                Sys.setenv("R_IP_ADDRESS" = sub(" .*", "", myip))
+            })
+        }
 <
-      - Create the directories `~/R/libraries` and `~/R/NvimR_cache`.
+	If the code above does not work, you have to find a way of discovering
+	the IP address of the remote machine (perhaps parsing the output of
+	`ifconfig`).
 
    3. At the local machine:
 
-      - Create the shell script `~/bin/sshR` with the following contents and
-	make it executable:
+      - Make the directories `~/remoteR/NvimR_cache` and `~/remoteR/R_library`.
+
+      - Create the shell script `~/bin/mountR` with the following contents,
+	and make it executable (of course, replace `remotelogin` and the path
+	to R library with valid values for your case):
+>
+       #!/bin/sh
+       sshfs remotelogin@remotehost:/home/remotelogin/.cache/Nvim-R remoteR/NvimR_cache
+       sshfs remotelogin@remotehost:/home/remotelogin/R/x86_64-pc-linux-gnu-library/3.3 remoteR/R_library
+<
+      - Create the shell script `~/bin/sshR` with the following contents, and
+	make it executable (replace `remotelogin` and `remotehost` with the
+	real values):
 >
         #!/bin/sh
-        ssh -p 222 -t remotelogin@remotehost "PATH=/home/remotelogin/bin:\$PATH R_LIBS_USER=~/R/library NVIMR_TMPDIR=~/R/NvimR_tmp NVIMR_COMPLDIR=~/R/NvimR_cache NVIMR_ID=$NVIMR_ID NVIMR_SECRET=$NVIMR_SECRET R_DEFAULT_PACKAGES=$R_DEFAULT_PACKAGES NVIM_IP_ADDRESS=$NVIM_IP_ADDRESS R $*"
+        ssh -p 222 -t remotelogin@remotehost "PATH=/home/remotelogin/bin:\$PATH NVIMR_COMPLDIR=~/.cache/Nvim-R NVIMR_TMPDIR=~/.cache/Nvim-R/tmp NVIMR_ID=$NVIMR_ID NVIMR_SECRET=$NVIMR_SECRET R_DEFAULT_PACKAGES=$R_DEFAULT_PACKAGES NVIM_IP_ADDRESS=$NVIM_IP_ADDRESS R $*"
 <
 
-      - Add the following lines to your vimrc (replace wlp1s0 with whatever is
-	your local network interface):
+      - Add the following lines to your |vimrc| (replace `hostname -I` with a
+	command that works in your system):
 >
         " Use remote R if the remote file system is mounted
-        if isdirectory("/home/locallogin/remoteR/library")
-            let $NVIM_IP_ADDRESS = split(system("ifconfig | grep -C 1 wlp1s0 | tail -n 1 | sed -e 's/^ *inet \\(.*\\) netmask.*/\\1/'"), "\n")[0]
+        if system("df | grep remoteR") != ""
+            let $NVIM_IP_ADDRESS = substitute(system("hostname -I"), " .*", "", "")
             let R_app = "/home/locallogin/bin/sshR"
             let R_cmd = "/home/locallogin/bin/sshR"
             let R_compldir = "/home/locallogin/remoteR/NvimR_cache"
-            let R_tmpdir = "/home/locallogin/remoteR/NvimR_tmp"
+            let R_tmpdir = "/home/locallogin/remoteR/NvimR_cache/tmp"
             let R_remote_tmpdir = "/home/remotelogin/R/NvimR_tmp"
             let R_nvimcom_home = "/home/locallogin/remoteR/library/nvimcom"
         endif
