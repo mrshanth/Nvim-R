@@ -711,7 +711,7 @@ function CheckNvimcomVersion()
                     \ '    unlist(strsplit(Sys.getenv("R_LIBS_USER"), .Platform$path.sep))[1L],',
                     \ '    sep = "\n")',
                     \ 'sink()']
-        let slog = system(g:R_app . ' --no-save', rcode)
+        let slog = system(g:rplugin_R . ' --no-save', rcode)
         if v:shell_error
             call RWarningMsg(slog)
             return 0
@@ -2934,7 +2934,7 @@ function BuildROmniList(pattern)
         return
     endif
 
-    let omnilistcmd = 'nvimcom:::nvim.bol("' . g:rplugin_tmpdir . "/GlobalEnvList_" . $NVIMR_ID . '"'
+    let omnilistcmd = 'nvimcom:::nvim.bol(".GlobalEnv"'
 
     if g:R_allnames == 1
         let omnilistcmd = omnilistcmd . ', allnames = TRUE'
