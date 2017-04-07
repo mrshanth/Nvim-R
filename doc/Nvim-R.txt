@@ -2668,7 +2668,7 @@ configuration is required. Below is an example of how to achieve this:
 	real values):
 >
         #!/bin/sh
-        ssh -p 222 -t remotelogin@remotehost "PATH=/home/remotelogin/bin:\$PATH NVIMR_COMPLDIR=~/.cache/Nvim-R NVIMR_TMPDIR=~/.cache/Nvim-R/tmp NVIMR_ID=$NVIMR_ID NVIMR_SECRET=$NVIMR_SECRET R_DEFAULT_PACKAGES=$R_DEFAULT_PACKAGES NVIM_IP_ADDRESS=$NVIM_IP_ADDRESS R $*"
+        ssh -t remotelogin@remotehost "PATH=/home/remotelogin/bin:\$PATH NVIMR_COMPLDIR=~/.cache/Nvim-R NVIMR_TMPDIR=~/.cache/Nvim-R/tmp NVIMR_ID=$NVIMR_ID NVIMR_SECRET=$NVIMR_SECRET R_DEFAULT_PACKAGES=$R_DEFAULT_PACKAGES NVIM_IP_ADDRESS=$NVIM_IP_ADDRESS R $*"
 <
 
       - Add the following lines to your |vimrc| (replace `hostname -I` with a
@@ -2681,13 +2681,13 @@ configuration is required. Below is an example of how to achieve this:
             let R_cmd = "/home/locallogin/bin/sshR"
             let R_compldir = "/home/locallogin/remoteR/NvimR_cache"
             let R_tmpdir = "/home/locallogin/remoteR/NvimR_cache/tmp"
-            let R_remote_tmpdir = "/home/remotelogin/R/NvimR_tmp"
-            let R_nvimcom_home = "/home/locallogin/remoteR/library/nvimcom"
+            let R_remote_tmpdir = "/home/remotelogin/R/NvimR_cache/tmp"
+            let R_nvimcom_home = "/home/locallogin/remoteR/R_library/nvimcom"
         endif
 <
-      - Mount the remote directory with `sshfs`:
+      - Mount the remote directories:
 >
-	sshfs remotelogin@remotehost:/home/remotelogin/R remoteR
+	~/bin/mountR
 <
       - Start Neovim (or Vim), and start R.
 
